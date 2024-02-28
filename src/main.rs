@@ -37,7 +37,6 @@ fn main() {
     let mut tmp_str = String::new();
 
     for (index, &byte) in bytes.iter().enumerate() {
-        // Assuming you're trying to form an IP-like structure
         tmp_str.push_str(&format!("{}", byte));
         if (index + 1) % 4 != 0 {
             // Append a dot if it's not the last byte in a segment

